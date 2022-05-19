@@ -4,6 +4,13 @@ from bs4 import BeautifulSoup
 import logging
 from urllib.parse import urljoin
 
+import re
+from scrapy.spiders import Spider
+from scrapy.spiders import CrawlSpider, Rule
+from scrapy.linkextractors import LinkExtractor
+from w3lib.url import url_query_cleaner
+import extruct
+
 logging.basicConfig(
     format='%(asctime)s %(levelname)s:%(message)s',
     level=logging.INFO)
@@ -44,5 +51,39 @@ class Crawwwler:
             finally:
                 self.visited.append(url)
 
+def process(links):
+    for link in links:
+        link.url = url_query_cleaner(link.url)
+        yield link
+
+class ImbdCrawwwler(CrawlSpider):
+    name = 'imdb'
+    allowed_domains = ['www.imdb.com']
+    start_urls = ['https://www.imdb.com/']
+    rules = (
+        Rule(
+            LinkExtractor(
+                deny=[
+                    re.escape('https://www.imdb.com/offsite'),
+                    re.escape('https://www.imdb.com/whitelist-offsite'),
+                    ],
+            ),
+            process_links=process,
+            callback='parse',
+            follow=True
+        ),
+    )
+
+    def parse(self, response):
+        return {
+            'url': response.url,
+            'metadata': extruct.extract(
+                response.text,
+                response.url,
+                syntaxes=['opengraph', 'json-ld']
+            ),
+        }
+"""
 if __name__ == '__main__':
     Crawwwler(urls=['https://www.imdb.com/']).run()
+"""
