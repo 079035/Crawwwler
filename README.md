@@ -1,3 +1,3 @@
 # Crawwwler
 
-Automated web crawler for IMDb
+Automated web crawler for IMDb.com
